@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../job/presentation/widgets/job_order_create_dialog.dart';
+import '../../data/dashboard_providers.dart';
 
-class DashboardHeader extends StatelessWidget {
+class DashboardHeader extends ConsumerWidget {
   final String? agencyName;
   final String currentTab;
 
@@ -15,7 +17,7 @@ class DashboardHeader extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final user = Supabase.instance.client.auth.currentUser;
 
     return Container(
@@ -90,9 +92,14 @@ class DashboardHeader extends StatelessWidget {
                 builder: (context) => const JobOrderCreateDialog(),
               );
               
-              // 오더 등록 성공 시 대시보드 새로고침 (필요한 경우)
+              // 오더 등록 성공 시 대시보드 새로고침
               if (result == true) {
-                // TODO: 대시보드 데이터 새로고침
+                // 대시보드 통계 새로고침
+                ref.invalidate(dashboardControllerProvider);
+                // 진행 중인 오더 목록 새로고침
+                ref.invalidate(activeJobOrdersProvider);
+                // 최근 활동 새로고침
+                ref.invalidate(recentActivitiesProvider);
               }
             },
             icon: const Icon(Icons.add, size: 18),
