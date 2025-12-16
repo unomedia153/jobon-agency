@@ -12,7 +12,8 @@ class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
 
   @override
-  ConsumerState<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
+  ConsumerState<AdminDashboardScreen> createState() =>
+      _AdminDashboardScreenState();
 }
 
 class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
@@ -35,18 +36,12 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               children: [
                 // 상단 헤더
                 agencyNameAsync.when(
-                  data: (name) => DashboardHeader(
-                    agencyName: name,
-                    currentTab: '개요',
-                  ),
-                  loading: () => DashboardHeader(
-                    agencyName: null,
-                    currentTab: '개요',
-                  ),
-                  error: (_, __) => DashboardHeader(
-                    agencyName: null,
-                    currentTab: '개요',
-                  ),
+                  data: (name) =>
+                      DashboardHeader(agencyName: name, currentTab: '개요'),
+                  loading: () =>
+                      DashboardHeader(agencyName: null, currentTab: '개요'),
+                  error: (_, __) =>
+                      DashboardHeader(agencyName: null, currentTab: '개요'),
                 ),
                 // 메인 콘텐츠
                 Expanded(
@@ -71,16 +66,22 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              // 왼쪽: 진행 중인 오더 현황 (큰 카드)
+                              // 왼쪽: 현장 요청서 (해당 일) (큰 카드)
                               Expanded(
                                 flex: 2,
-                                child: _buildJobOrdersTable(context, jobOrdersAsync),
+                                child: _buildJobOrdersTable(
+                                  context,
+                                  jobOrdersAsync,
+                                ),
                               ),
                               const SizedBox(width: 16),
                               // 오른쪽: 실시간 알림 (작은 카드)
                               Expanded(
                                 flex: 1,
-                                child: _buildActivityTimeline(context, activitiesAsync),
+                                child: _buildActivityTimeline(
+                                  context,
+                                  activitiesAsync,
+                                ),
                               ),
                             ],
                           ),
@@ -94,9 +95,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                               child: _buildPlacementStatusCard(statsAsync),
                             ),
                             const SizedBox(width: 16),
-                            Expanded(
-                              child: _buildWorkerStatusCard(statsAsync),
-                            ),
+                            Expanded(child: _buildWorkerStatusCard(statsAsync)),
                           ],
                         ),
                       ],
@@ -159,9 +158,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   ) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -174,17 +171,17 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 topRight: Radius.circular(8),
               ),
             ),
-            child: const Row(
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '진행 중인 오더 현황',
-                  style: TextStyle(
+                  '현장 요청서 (${DateFormat('yyyy-MM-dd').format(DateTime.now())})',
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                Text(
+                const Text(
                   '전체 보기',
                   style: TextStyle(
                     fontSize: 14,
@@ -203,7 +200,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                     child: Padding(
                       padding: EdgeInsets.all(40),
                       child: Text(
-                        '등록된 오더가 없습니다.\n오른쪽 상단의 "오더 등록" 버튼을 눌러주세요.',
+                        '등록된 현장 요청서가 없습니다.\n오른쪽 상단의 "오더 등록" 버튼을 눌러주세요.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 16,
@@ -226,60 +223,122 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                           ),
                           child: DataTable(
                             columnSpacing: 16,
-                    columns: const [
-                      DataColumn(label: Text('현장명', style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text('날짜', style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text('직종', style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text('필요인원', style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text('배차상태', style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text('상태', style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text('액션', style: TextStyle(fontWeight: FontWeight.bold))),
-                    ],
-                    rows: orders.take(10).map((order) {
-                      final site = order['sites'] as Map<String, dynamic>?;
-                      final placements = order['placements'] as List<dynamic>? ?? [];
-                      final acceptedCount = placements
-                          .where((p) => (p as Map)['status'] == 'accepted')
-                          .length;
-                      final totalNeeded = placements.length;
-
-                      return DataRow(
-                        cells: [
-                          DataCell(Text(
-                            site?['name'] ?? '-',
-                            style: const TextStyle(fontWeight: FontWeight.w500),
-                          )),
-                          DataCell(Text(_formatDate(order['work_date'] as String?))),
-                          DataCell(Text(order['work_type'] as String? ?? '-')),
-                          DataCell(Text('$totalNeeded명')),
-                          DataCell(Text(
-                            '$acceptedCount/$totalNeeded명',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: acceptedCount == totalNeeded && totalNeeded > 0
-                                  ? AppColors.success
-                                  : AppColors.textPrimary,
-                            ),
-                          )),
-                          DataCell(_buildStatusChip(acceptedCount, totalNeeded)),
-                          DataCell(
-                            TextButton(
-                              onPressed: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('배차 기능은 준비 중입니다.'),
-                                  ),
-                                );
-                              },
-                              style: TextButton.styleFrom(
-                                foregroundColor: AppColors.primary,
+                            columns: const [
+                              DataColumn(
+                                label: Text(
+                                  '현장명',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
                               ),
-                              child: const Text('배차하기'),
-                            ),
-                          ),
-                        ],
-                      );
-                    }).toList(),
+                              DataColumn(
+                                label: Text(
+                                  '날짜',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  '직종',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  '필요인원',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  '배차상태',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  '상태',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  '액션',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                            rows: orders.take(10).map((order) {
+                              final site =
+                                  order['sites'] as Map<String, dynamic>?;
+                              final placements =
+                                  order['placements'] as List<dynamic>? ?? [];
+                              final acceptedCount = placements
+                                  .where(
+                                    (p) => (p as Map)['status'] == 'accepted',
+                                  )
+                                  .length;
+                              final totalNeeded = placements.length;
+
+                              return DataRow(
+                                cells: [
+                                  DataCell(
+                                    Text(
+                                      site?['name'] ?? '-',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                  DataCell(
+                                    Text(
+                                      _formatDate(
+                                        order['work_date'] as String?,
+                                      ),
+                                    ),
+                                  ),
+                                  DataCell(
+                                    Text(order['work_type'] as String? ?? '-'),
+                                  ),
+                                  DataCell(Text('$totalNeeded명')),
+                                  DataCell(
+                                    Text(
+                                      '$acceptedCount/$totalNeeded명',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        color:
+                                            acceptedCount == totalNeeded &&
+                                                totalNeeded > 0
+                                            ? AppColors.success
+                                            : AppColors.textPrimary,
+                                      ),
+                                    ),
+                                  ),
+                                  DataCell(
+                                    _buildStatusChip(
+                                      acceptedCount,
+                                      totalNeeded,
+                                    ),
+                                  ),
+                                  DataCell(
+                                    TextButton(
+                                      onPressed: () {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('배차 기능은 준비 중입니다.'),
+                                          ),
+                                        );
+                                      },
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: AppColors.primary,
+                                      ),
+                                      child: const Text('배차하기'),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }).toList(),
                           ),
                         ),
                       ),
@@ -310,9 +369,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   ) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -327,10 +384,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
             ),
             child: const Text(
               '실시간 알림',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
           Expanded(
@@ -366,7 +420,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                   padding: const EdgeInsets.all(20),
                   child: Text(
                     '에러: $error',
-                    style: const TextStyle(color: AppColors.error, fontSize: 12),
+                    style: const TextStyle(
+                      color: AppColors.error,
+                      fontSize: 12,
+                    ),
                   ),
                 ),
               ),
@@ -451,10 +508,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               children: [
                 Text(
                   activity['message'] as String? ?? '',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    height: 1.4,
-                  ),
+                  style: const TextStyle(fontSize: 14, height: 1.4),
                 ),
                 const SizedBox(height: 4),
                 Text(
