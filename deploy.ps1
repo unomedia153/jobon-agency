@@ -7,12 +7,12 @@ Write-Host "📂 설정 파일 복사 중..."
 Copy-Item vercel.json -Destination build/web/
 
 # 3. 버셀 배포 폴더로 이동
-cd build/web
+Set-Location build/web
 
 # 4. 실제 배포 (프로덕션)
 Write-Host "🚀 버셀로 발사!"
 vercel deploy --prod
 
 # 5. 원래 폴더로 복귀
-cd ../..
+Set-Location ../..
 Write-Host "✅ 배포 완료! 수고하셨습니다."

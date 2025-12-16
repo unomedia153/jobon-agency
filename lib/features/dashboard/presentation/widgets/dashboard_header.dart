@@ -50,11 +50,11 @@ class DashboardHeader extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 _TabItem(
-                  label: '오더 관리',
+                  label: '현장요청 관리',
                   isActive: false,
                   onTap: () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('오더 관리 기능은 준비 중입니다.')),
+                      const SnackBar(content: Text('현장요청 관리 기능은 준비 중입니다.')),
                     );
                   },
                 ),
