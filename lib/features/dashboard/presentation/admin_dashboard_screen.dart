@@ -75,7 +75,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                                 ),
                               ),
                               const SizedBox(width: 16),
-                              // 오른쪽: 실시간 알림 (작은 카드)
+                              // 오른쪽: 현장 마감 알림 (작은 카드)
                               Expanded(
                                 flex: 1,
                                 child: _buildActivityTimeline(
@@ -383,7 +383,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               ),
             ),
             child: const Text(
-              '실시간 알림',
+              '현장 마감 알림',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
