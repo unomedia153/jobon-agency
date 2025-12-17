@@ -1,13 +1,26 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+/// 가용 작업자 목록 조회 결과 (통계 정보 포함)
+class AvailableWorkersResult {
+  final List<Map<String, dynamic>> workers;
+  final int totalWorkers;
+  final int availableCount;
+
+  AvailableWorkersResult({
+    required this.workers,
+    required this.totalWorkers,
+    required this.availableCount,
+  });
+}
+
 class DispatchRepository {
   final SupabaseClient _supabase = Supabase.instance.client;
 
-  /// 가용 작업자 목록 조회 (해당 날짜에 배정되지 않은 작업자만)
+  /// 가용 작업자 목록 조회 (해당 날짜에 배정되지 않고 휴무가 아닌 작업자만)
   /// 
   /// [date] 작업 날짜
   /// [searchQuery] 검색어 (이름 또는 전화번호)
-  Future<List<Map<String, dynamic>>> getAvailableWorkers({
+  Future<AvailableWorkersResult> getAvailableWorkers({
     required DateTime date,
     String? searchQuery,
   }) async {
@@ -21,11 +34,13 @@ class DispatchRepository {
           .order('name', ascending: true);
 
       final allWorkers = List<Map<String, dynamic>>.from(workersResponse);
+      final totalWorkers = allWorkers.length;
 
-      // 2. 해당 날짜에 이미 배정된 작업자 ID 목록 조회
+      // 2. 배차 불가능한 작업자 ID 목록 조회 (Parallel Fetch)
       final dateStr = date.toIso8601String().split('T')[0]; // YYYY-MM-DD 형식
       
-      // 먼저 해당 날짜의 job_order_id 목록 조회
+      // Query A: 해당 날짜에 이미 배정된 작업자 ID 목록
+      Set<String> assignedWorkerIds = {};
       final jobOrdersResponse = await _supabase
           .from('job_orders')
           .select('id')
@@ -36,8 +51,6 @@ class DispatchRepository {
           .map((jo) => jo['id'] as String)
           .toList();
 
-      // 해당 job_order_id들에 해당하는 accepted 상태의 placements 조회
-      Set<String> assignedWorkerIds = {};
       if (jobOrderIds.isNotEmpty) {
         final placementsResponse = await _supabase
             .from('placements')
@@ -51,12 +64,33 @@ class DispatchRepository {
             .toSet();
       }
 
-      // 3. 배정되지 않은 작업자만 필터링
+      // Query B: 해당 날짜에 휴무인 작업자 ID 목록
+      Set<String> onLeaveWorkerIds = {};
+      try {
+        final leavesResponse = await _supabase
+            .from('worker_leaves')
+            .select('worker_id')
+            .lte('start_date', dateStr)
+            .gte('end_date', dateStr)
+            .isFilter('deleted_at', null);
+
+        onLeaveWorkerIds = (leavesResponse as List)
+            .map((l) => l['worker_id'] as String)
+            .toSet();
+      } catch (e) {
+        // worker_leaves 테이블이 아직 생성되지 않았을 수 있음
+        // 에러를 무시하고 계속 진행
+      }
+
+      // 3. 배차 불가능한 작업자 ID 합집합
+      final unavailableWorkerIds = assignedWorkerIds.union(onLeaveWorkerIds);
+
+      // 4. 가용 작업자 필터링 (배정되지 않고 휴무가 아닌 작업자)
       var availableWorkers = allWorkers
-          .where((worker) => !assignedWorkerIds.contains(worker['id'] as String))
+          .where((worker) => !unavailableWorkerIds.contains(worker['id'] as String))
           .toList();
 
-      // 4. 검색어가 있으면 추가 필터링 (대소문자 구분 없이)
+      // 5. 검색어가 있으면 추가 필터링 (대소문자 구분 없이)
       if (searchQuery != null && searchQuery.isNotEmpty) {
         final lowerQuery = searchQuery.toLowerCase();
         availableWorkers = availableWorkers.where((worker) {
@@ -66,7 +100,11 @@ class DispatchRepository {
         }).toList();
       }
 
-      return availableWorkers;
+      return AvailableWorkersResult(
+        workers: availableWorkers,
+        totalWorkers: totalWorkers,
+        availableCount: availableWorkers.length,
+      );
     } catch (e) {
       throw Exception('가용 작업자 목록 조회 실패: $e');
     }

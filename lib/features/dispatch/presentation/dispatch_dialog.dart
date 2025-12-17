@@ -221,31 +221,96 @@ class _DispatchDialogState extends ConsumerState<DispatchDialog> {
             ),
             const SizedBox(height: 16),
 
-            // "배치 가능한 작업자" 라벨
-            Row(
-              children: [
-                const Icon(
-                  Icons.people_outline,
-                  size: 18,
-                  color: AppColors.textSecondary,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '배치 가능한 작업자',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[700],
+            // "배치 가능한 작업자" 라벨 및 통계 정보
+            workersAsync.when(
+              data: (result) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.people_outline,
+                          size: 18,
+                          color: AppColors.textSecondary,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '배치 가능한 작업자',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.info.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '총 ${result.totalWorkers}명의 작업자 중 ${result.availableCount}명이 배치 가능합니다',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.info,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+              loading: () => Row(
+                children: [
+                  const Icon(
+                    Icons.people_outline,
+                    size: 18,
+                    color: AppColors.textSecondary,
                   ),
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  Text(
+                    '배치 가능한 작업자',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                ],
+              ),
+              error: (_, __) => Row(
+                children: [
+                  const Icon(
+                    Icons.people_outline,
+                    size: 18,
+                    color: AppColors.textSecondary,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '배치 가능한 작업자',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 12),
 
             // 작업자 리스트
             Expanded(
               child: workersAsync.when(
-                data: (workers) {
+                data: (result) {
+                  final workers = result.workers;
                   if (workers.isEmpty) {
                     return Center(
                       child: Column(
