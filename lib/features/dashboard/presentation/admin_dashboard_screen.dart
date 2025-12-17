@@ -7,6 +7,7 @@ import 'widgets/dashboard_sidebar.dart';
 import 'widgets/dashboard_header.dart';
 import 'widgets/circular_progress_card.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../dispatch/presentation/dispatch_dialog.dart';
 
 class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -315,8 +316,20 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                                 SizedBox(
                                   height: 30,
                                   child: OutlinedButton(
-                                    onPressed: () {
-                                      // TODO: 배차 다이얼로그 띄우기 연결
+                                    onPressed: () async {
+                                      final result = await showDialog<bool>(
+                                        context: context,
+                                        builder: (context) =>
+                                            DispatchDialog(jobOrder: order),
+                                      );
+
+                                      // 배정이 완료되면 대시보드 새로고침
+                                      if (result == true && mounted) {
+                                        ref.invalidate(activeJobOrdersProvider);
+                                        ref.invalidate(
+                                          dashboardControllerProvider,
+                                        );
+                                      }
                                     },
                                     style: OutlinedButton.styleFrom(
                                       padding: const EdgeInsets.symmetric(
