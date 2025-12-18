@@ -73,11 +73,11 @@ class DashboardHeader extends ConsumerWidget {
                 ),
                 const SizedBox(width: 8),
                 _TabItem(
-                  label: '작업자 리스트',
+                  label: '작업자 관리페이지',
                   isActive: false,
                   onTap: () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('작업자 리스트 기능은 준비 중입니다.')),
+                      const SnackBar(content: Text('작업자 관리페이지 기능은 준비 중입니다.')),
                     );
                   },
                 ),
